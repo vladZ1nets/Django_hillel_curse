@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Bookings</title>
+</head>
+<body>
+    <h1>Your Bookings</h1>
+    <ul>
+        {% for booking in bookings %}
+            <li>
+                Service: {{ booking.service.name }} <br>
+                Trainer: {{ booking.trainer.first_name }} {{ booking.trainer.last_name }} <br>
+                Date: {{ booking.datetime_start }} <br>
+                Duration: {{ booking.service.duration }} minutes
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

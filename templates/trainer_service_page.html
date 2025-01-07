@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Service booking</title>
+</head>
+<body>
+    <h1>Service page</h1>
+    <p>Category: {{ specific_service.category.name }}</p>
+    <p>Price: ${{ specific_service.price }}</p>
+    <p>Trainer: {{ specific_service.trainer.first_name }} {{ specific_service.trainer.last_name }}</p>
+    <p>Duration: {{ specific_service.duration }} minutes</p>
+    <p>Level: {{ specific_service.level }}</p>
+
+    <h2>Available Times</h2>
+    <form action='/trainer/{{ specific_service.trainer.id }}/{{ specific_service.id }}' method="post">
+        {% csrf_token %}
+        <label for="training-start">Select training start:</label>
+        <select name="training-start" id="training-start">
+            {% for training_start in available_times %}
+                <option value="{{ training_start }}">{{ training_start }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html>

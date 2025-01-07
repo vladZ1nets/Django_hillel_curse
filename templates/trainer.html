@@ -1,0 +1,35 @@
+<html>
+<body>
+<h1>My services</h1>
+{% for service in services %}
+    <br> {{ service.category.name }}
+    <br> {{ service.price }}
+    <br> {{ service.duration }}
+    <br> {{ service.level }}
+    
+{% endfor %}
+<p>
+<h1>Add Trainer Service</h1>
+<form action="/service/" method="post">
+    <div>
+    {% csrf_token %}
+    category: 
+      <select name="category">
+            {% for category in categories %}
+            <option value="{{ category.id }}">{{ category.name }}</option>
+            {% endfor %}
+      </select>  
+    <br>
+    price: <input type="number" name="price">
+    duration: <input type="number" name="duration"> 
+    level:
+    <select name="level">
+            <option value="1">Easy</option>
+            <option value="2">Medium</option>
+            <option value="3">Hard</option>
+    </select>
+    </div>
+    <input type="submit">
+</form>
+</body>
+</html>
