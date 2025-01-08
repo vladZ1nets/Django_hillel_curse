@@ -29,19 +29,29 @@ def trainer_service_page(request, trainer_id, service_id):
     if request.method == "GET":
         available_times = []
         days_from_now = 1
-        today = datetime.datetime.now()
+        today = datetime.now()
         while days_from_now <= 7:
-            cur_date = datetime.datetime(today.year, today.month, today.day) + datetime.timedelta(days=days_from_now)
-            training_bookings = booking_models.Booking.objects.filter(trainer=current_trainer, datetime_start__date=cur_date.date()).all()
-            bookings_list = [(itm.datetime_start, itm.datetime_end)for itm in training_bookings]
-            training_schedule = trainer.models.TrainerSchedule.objects.filter(trainer=current_trainer, datetime_start__date=cur_date.date()).values_list('datetime_start', 'datetime_end')
-            available_times += booking_time_discovery(training_schedule, bookings_list, cur_date)
+            cur_date = datetime(today.year, today.month, today.day) + datetime.timedelta(days=days_from_now)
+            # Отримуємо список бронювань для цього дня
+            training_bookings = booking_models.Booking.objects.filter(trainer=current_trainer,
+                                                                      datetime_start__date=cur_date.date()).all()
+            bookings_list = [(itm.datetime_start, itm.datetime_end) for itm in training_bookings]
+            # Отримуємо графік тренування на цей день
+            training_schedule = trainer.models.TrainerSchedule.objects.filter(trainer=current_trainer,
+                                                                              datetime_start__date=cur_date.date())
+            for schedule in training_schedule:
+                available_times += booking_time_discovery(schedule.datetime_start, schedule.datetime_end, bookings_list,
+                                                          search_window=30)
             days_from_now += 1
-        return render(request, 'trainer_service_page.html', context={'specific_service': specific_service, 'available_times': available_times})
+        return render(request, 'trainer_service_page.html',
+                      context={'specific_service': specific_service, 'available_times': available_times})
     else:
+        # Обробка POST запиту
         booking_start = parser.parse(request.POST.get('training-start'))
         current_user = User.objects.get(id=current_trainer.id)
-        booking_models.Booking.objects.create(trainer=current_trainer, user=current_user, service=specific_service, datetime_start=booking_start, datetime_end=booking_start + datetime.timedelta(minutes=specific_service.duration))
+        booking_models.Booking.objects.create(trainer=current_trainer, user=current_user, service=specific_service,
+                                              datetime_start=booking_start,
+                                              datetime_end=booking_start + datetime.timedelta(minutes=specific_service.duration))
     return HttpResponse("Hello, world. You're at the polls index.")
 
 def service_page(request):
@@ -56,14 +66,13 @@ def service_page(request):
                 level = form_data["level"],
                 duration = form_data["duration"],
                 price = form_data["price"],
-                category = service_cat,
                 trainer = request.user,
+                category = service_cat
             )
             service.save()
-            return redirect("/trainer/")
+            return redirect(f'/trainer/{request.user.id}')
         else:
-            return HttpResponseForbidden()
-
+            return HttpResponseForbidden("You don't have permission to add services.")
 def booking_for_user(request):
     if request.user.is_authenticated:
         user_bookings = booking_models.Booking.objects.filter(user=request.user)
@@ -84,4 +93,3 @@ def trainer_registration(request):
         user.groups.add(trainer_group)
         user.save()
         return HttpResponse("Hello, world. You're at the polls index.")
-

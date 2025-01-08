@@ -1,9 +1,9 @@
 from django.contrib.auth.models import Group, User
 from django.test import TestCase, Client
 from trainer.models import Service
-import unittest
 import datetime
-import utils
+from trainer import utils
+import unittest
 
 class TrainerTest(TestCase):
     fixtures = ['fixture1.json']
@@ -230,4 +230,5 @@ class TestSchedule(unittest.TestCase):
         ]
         results = utils.booking_time_discovery(start_date, end_date, trainer_bookings, search_window)
         self.assertListEqual(expected, results)
+
 
