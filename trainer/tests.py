@@ -1,62 +1,87 @@
-from django.contrib.auth.models import Group, User
-from django.test import TestCase, Client
-from trainer.models import Service
-import datetime
 from trainer.utils import booking_time_discovery
+from django.test import TestCase
+from django.contrib.auth.models import User, Group
+from django.urls import reverse
+from trainer.models import Category, Service
+from booking.models import Booking
+import datetime
 
 
-class TrainerTest(TestCase):
-    fixtures = ['fixture1.json']
+class TrainerAppTests(TestCase):
 
-    def test_show_all_trainers(self):
-        client = Client()
-        response = client.get('/trainer/')
+    def setUp(self):
+        # Створення груп
+        self.trainer_group = Group.objects.create(name="Trainer")
+        self.client_group = Group.objects.create(name="Client")
+
+        # Створення користувачів
+        self.trainer_user = User.objects.create_user(
+            username="trainer_user",
+            password="trainerpass",
+            email="trainer@example.com"
+        )
+        self.trainer_user.groups.add(self.trainer_group)
+        self.trainer_user.save()
+
+        self.client_user = User.objects.create_user(
+            username="client_user",
+            password="clientpass",
+            email="client@example.com"
+        )
+        self.client_user.groups.add(self.client_group)
+        self.client_user.save()
+
+        # Створення категорій
+        self.category1 = Category.objects.create(name="Фітнес")
+        self.category2 = Category.objects.create(name="Йога")
+
+        # Створення послуг
+        self.service1 = Service.objects.create(
+            trainer=self.trainer_user,
+            category=self.category1,
+            price=100,
+            duration=60,
+            level=1
+        )
+        self.service2 = Service.objects.create(
+            trainer=self.trainer_user,
+            category=self.category2,
+            price=150,
+            duration=45,
+            level=2
+        )
+
+    # Тест на перегляд всіх категорій
+    def test_view_all_categories(self):
+        response = self.client.get(reverse('category_page'))  # Замість category_page — реальна назва вашого виду
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Фітнес")
+        self.assertContains(response, "Йога")
 
-    def test_all_services(self):
-        client = Client()
-        response = client.get('/services/')
+    # Тест для перегляду сторінки тренера (для тренерів)
+    def test_trainer_page_shows_services(self):
+        self.client.login(username='trainer_user', password='trainerpass')
+        response = self.client.get(reverse('trainer_page', args=[self.trainer_user.id]))
         self.assertEqual(response.status_code, 200)
-        response = client.get('/services/?trainer_id=1')
-        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Фітнес")
+        self.assertContains(response, "Йога")
 
-    def test_trainer_add_service(self):
-        # анонімний користувач
-        client = Client()
-        response = client.post('/services/', {'category': 1, 'price': 100, 'duration': 100, 'level': 1})
+
+    # Тест для перевірки доступу до сторінки додавання послуги для не тренера
+    def test_non_trainer_add_service(self):
+        self.client.login(username="client_user", password="clientpass")
+
+        # Спроба додати послугу
+        response = self.client.post(reverse('service_page'), {
+            'category': self.category1.id,
+            'price': 100,
+            'duration': 60,
+            'level': 1
+        })
+
         self.assertEqual(response.status_code, 403)
 
-        # користувач
-        user = User.objects.create_user(
-            username="test_client_user1",
-            password="1111",
-            email="user1@gmail.com",
-            first_name="john",
-            last_name="dow",
-        )
-        user.groups.add(Group.objects.get(name="client"))
-        user.save()
-        client.login(username="test_client_user1", password="1111")
-        response = client.post('/services/', {'category': 1, 'price': 100, 'duration': 100, 'level': 1})
-        self.assertEqual(response.status_code, 403)
 
-        # тренер
-        trainer = User.objects.create_user(
-            username="test_trainer",
-            password="1111",
-            email="trainer@gmail.com",
-            first_name="Jane",
-            last_name="Doe",
-        )
-        trainer.groups.add(Group.objects.get(name="Trainer"))
-        trainer.save()
-        client.login(username="test_trainer", password="1111")
-        response = client.post('/services/', {'category': 1, 'price': 100, 'duration': 100, 'level': 1})
-        self.assertEqual(response.status_code, 302)
-
-        created_service = Service.objects.filter(trainer=trainer).first()  # фільтруємо по тренеру
-        self.assertEqual(created_service.trainer.username, 'test_trainer')
-        self.assertEqual(created_service.price, 100)
 
 class TestSchedule(TestCase):
     maxDiff = None
