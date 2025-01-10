@@ -5,10 +5,8 @@
     <title>User Detail</title>
 </head>
 <body>
-    <h1>User Details</h1>
-    <p>Username: {{ user.username }}</p>
-    <p>Email: {{ user.email }}</p>
-    <p>First Name: {{ user.first_name }}</p>
-    <p>Last Name: {{ user.last_name }}</p>
+    <div>
+        {{ update_form.as_p }}
+    </div>
 </body>
 </html>

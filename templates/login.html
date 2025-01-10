@@ -7,8 +7,10 @@
 <body>
     <form action="/login/" method="post">
         {% csrf_token %}
-        Username: <input type="text" name="username">
-        Password: <input type="password" name="password">
+        <div>
+        {{ form_login.as_p }}
+        </div>
+        
         <br>
         <input type="submit">
     </form>

@@ -6,7 +6,8 @@ from django.http import HttpResponse, HttpResponseForbidden
 import trainer.models
 from trainer.utils import booking_time_discovery
 import booking.models as booking_models
-
+from users.models import User as CustomUser
+from users.forms import RegisterForm
 def category_page(request):
     service_categories = trainer.models.Category.objects.all()
     return render(request, "categories.html", {"categories": service_categories})
@@ -81,15 +82,14 @@ def booking_for_user(request):
 
 def trainer_registration(request):
     if request.method == "GET":
-        return render(request, "trainer_signup.html")
+        trainer_signup_form = RegisterForm()
+        context = {"trainer_signup_form": trainer_signup_form}
+        return render(request, "trainer_signup.html", context=context)
     else:
-        username = request.POST.get("username")
-        password = request.POST.get("password")
-        email = request.POST.get("email")
-        first_name = request.POST.get("first_name")
-        last_name = request.POST.get("last_name")
-        user = User.objects.create_user(username, email, password, first_name=first_name, last_name=last_name)
-        trainer_group = Group.objects.get(name="Trainer")
-        user.groups.add(trainer_group)
-        user.save()
-        return HttpResponse("Hello, world. You're at the polls index.")
+        trainer_signup_form = RegisterForm(request.POST)
+        if trainer_signup_form.is_valid():
+            trainer_group = Group.objects.get(name="Trainer")
+            created_user = trainer_signup_form.save()
+            created_user.groups.add(trainer_group)
+            trainer_signup_form.save()
+        return render(request, 'login.html')
